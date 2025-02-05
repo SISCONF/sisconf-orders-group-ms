@@ -1,14 +1,21 @@
 package internal
 
+import "time"
+
 type OrderFood struct {
-	foodId   int64
-	quantity int
+	FoodName     string
+	Quantity     int
+	QuantityType string
 }
 
 type Order struct {
-	details []OrderFood
+	CustomerName string
+	Details      []OrderFood
 }
 
 type OrdersGroup struct {
-	orders []Order
+	TotalPrice   float64
+	OrderDate    time.Time
+	ItemQuantity int
+	Orders       []Order
 }
