@@ -1,6 +1,7 @@
-package internal
+package files
 
 import (
+	"github.com/SISCONF/sisconf-orders-group-ms.git/internal/sisconf"
 	"github.com/xuri/excelize/v2"
 )
 
@@ -70,7 +71,7 @@ func writeOrdersGroupXlsxHeader(file *excelize.File, customerName string) error 
 	return err
 }
 
-func CreateOrdersGroupXlsxFile(ordersGroup OrdersGroup) error {
+func CreateOrdersGroupXlsxFile(ordersGroup sisconf.OrdersGroup) error {
 	var err error
 	file := excelize.NewFile()
 	defer func() error {
