@@ -4,16 +4,27 @@ import (
 	"github.com/xuri/excelize/v2"
 )
 
+const headerFillAndRowsColor string = "00B050"
+
 func createHeaderRowStyle(file *excelize.File) (int, error) {
-	const headerRowFillColor string = "00B050"
-	const headerRowFontColor string = "000000"
+	const headerRowFontColor string = "000000" // Black
 
 	return file.NewStyle(&excelize.Style{
-		Fill: excelize.Fill{Color: []string{headerRowFillColor}, Type: "pattern", Pattern: 1},
+		Fill: excelize.Fill{Color: []string{headerFillAndRowsColor}, Type: "pattern", Pattern: 1},
 		Font: &excelize.Font{
 			Bold:   true,
 			Family: "Calibri",
 			Color:  headerRowFontColor,
+		},
+	})
+}
+
+func createColsStyle(file *excelize.File) (int, error) {
+	return file.NewStyle(&excelize.Style{
+		Font: &excelize.Font{
+			Bold:   true,
+			Family: "Calibri",
+			Color:  headerFillAndRowsColor,
 		},
 	})
 }
@@ -46,6 +57,16 @@ func writeOrdersGroupXlsxHeader(file *excelize.File, customerName string) error 
 	}
 
 	err = file.SetCellValue(customerName, "G1", "CX")
+	if err != nil {
+		return err
+	}
+
+	err = file.SetCellValue(customerName, "D1", "PRODUTO")
+	if err != nil {
+		return err
+	}
+
+	err = file.SetCellValue(customerName, "H1", "PRODUTO")
 	return err
 }
 
@@ -63,6 +84,21 @@ func CreateOrdersGroupXlsxFile(ordersGroup OrdersGroup) error {
 		}
 
 		headerStyleIndex, err := createHeaderRowStyle(file)
+		if err != nil {
+			return err
+		}
+
+		colsStyleIndex, err := createColsStyle(file)
+		if err != nil {
+			return err
+		}
+
+		err = file.SetColStyle(order.CustomerName, "D", colsStyleIndex)
+		if err != nil {
+			return err
+		}
+
+		err = file.SetColStyle(order.CustomerName, "H", colsStyleIndex)
 		if err != nil {
 			return err
 		}
