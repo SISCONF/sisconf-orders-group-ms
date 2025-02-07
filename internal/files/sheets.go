@@ -11,7 +11,17 @@ import (
 	"github.com/xuri/excelize/v2"
 )
 
+type FoodsList []sisconf.Food
+
+const sheetColsPerFoodsGroupCount float64 = 4
+const sheetFoodRowsPerFoodGroupCount float64 = 56
 const headerFillAndRowsColor string = "00B050"
+
+func (foodsList FoodsList) GetSheetColsGroupCount() float64 {
+	return math.Ceil(
+		float64(len(foodsList)) /
+			float64(sheetFoodRowsPerFoodGroupCount))
+}
 
 func createHeaderRowStyle(file *excelize.File) (int, error) {
 	const headerRowFontColor string = "000000" // Black
@@ -46,7 +56,7 @@ func writeOrdersGroupXlsxHeader(file *excelize.File, customerName string) error 
 		return err
 	}
 
-	var foodsList []sisconf.Food
+	var foodsList FoodsList
 	err = json.Unmarshal(foodsByes, &foodsList)
 	if err != nil {
 		return err
@@ -56,7 +66,7 @@ func writeOrdersGroupXlsxHeader(file *excelize.File, customerName string) error 
 		return errors.New("foods list is empty")
 	}
 
-	foodsListGroupsCount := math.Ceil(float64(len(foodsList)) / float64(56))
+	foodsListGroupsCount := foodsList.GetSheetColsGroupCount()
 
 	var currentCellLetter rune = 'A'
 	var currentGroupIndex int = 1
@@ -66,7 +76,7 @@ func writeOrdersGroupXlsxHeader(file *excelize.File, customerName string) error 
 		3: "CX",
 		4: "PRODUTO",
 	}
-	for currentCellsGroup := 0.0; currentCellsGroup < foodsListGroupsCount*4.0; currentCellsGroup++ {
+	for currentCellsGroup := 0.0; currentCellsGroup < foodsListGroupsCount*sheetColsPerFoodsGroupCount; currentCellsGroup++ {
 		cell := fmt.Sprintf("%c1", currentCellLetter)
 		err = file.SetCellValue(customerName, cell, groupsHeaderValue[currentGroupIndex])
 		if err != nil {
