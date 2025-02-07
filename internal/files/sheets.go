@@ -1,6 +1,12 @@
 package files
 
 import (
+	"encoding/json"
+	"errors"
+	"fmt"
+	"math"
+	"os"
+
 	"github.com/SISCONF/sisconf-orders-group-ms.git/internal/sisconf"
 	"github.com/xuri/excelize/v2"
 )
@@ -17,6 +23,9 @@ func createHeaderRowStyle(file *excelize.File) (int, error) {
 			Family: "Calibri",
 			Color:  headerRowFontColor,
 		},
+		Alignment: &excelize.Alignment{
+			Horizontal: "center",
+		},
 	})
 }
 
@@ -32,42 +41,48 @@ func createColsStyle(file *excelize.File) (int, error) {
 
 func writeOrdersGroupXlsxHeader(file *excelize.File, customerName string) error {
 	var err error
-	err = file.SetCellValue(customerName, "A1", "KG")
+	foodsByes, err := os.ReadFile("foods.json")
 	if err != nil {
 		return err
 	}
 
-	err = file.SetCellValue(customerName, "E1", "KG")
+	var foodsList []sisconf.Food
+	err = json.Unmarshal(foodsByes, &foodsList)
 	if err != nil {
 		return err
 	}
 
-	err = file.SetCellValue(customerName, "B1", "UND")
-	if err != nil {
-		return err
+	if len(foodsList) == 0 {
+		return errors.New("foods list is empty")
 	}
 
-	err = file.SetCellValue(customerName, "F1", "UND")
-	if err != nil {
-		return err
+	foodsListGroupsCount := math.Ceil(float64(len(foodsList)) / float64(56))
+
+	var currentCellLetter rune = 'A'
+	var currentGroupIndex int = 1
+	groupsHeaderValue := map[int]string{
+		1: "KG",
+		2: "UND",
+		3: "CX",
+		4: "PRODUTO",
+	}
+	for currentCellsGroup := 0.0; currentCellsGroup < foodsListGroupsCount*4.0; currentCellsGroup++ {
+		cell := fmt.Sprintf("%c1", currentCellLetter)
+		err = file.SetCellValue(customerName, cell, groupsHeaderValue[currentGroupIndex])
+		if err != nil {
+			return err
+		}
+
+		if currentGroupIndex == 4 {
+			currentGroupIndex = 1
+		} else {
+			currentGroupIndex++
+		}
+		currentCellLetter += 1
 	}
 
-	err = file.SetCellValue(customerName, "C1", "CX")
-	if err != nil {
-		return err
-	}
+	err = file.SetColWidth(customerName, "A", fmt.Sprintf("%c", currentCellLetter), 18)
 
-	err = file.SetCellValue(customerName, "G1", "CX")
-	if err != nil {
-		return err
-	}
-
-	err = file.SetCellValue(customerName, "D1", "PRODUTO")
-	if err != nil {
-		return err
-	}
-
-	err = file.SetCellValue(customerName, "H1", "PRODUTO")
 	return err
 }
 
