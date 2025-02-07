@@ -13,7 +13,7 @@ import (
 
 type FoodsList []sisconf.Food
 
-const sheetColsPerFoodsGroupCount float64 = 4
+const sheetColsPerFoodsGroupCount rune = 4
 const sheetFoodRowsPerFoodGroupCount float64 = 56
 const headerFillAndRowsColor string = "00B050"
 
@@ -69,26 +69,14 @@ func writeOrdersGroupXlsxHeader(file *excelize.File, customerName string) error 
 	foodsListGroupsCount := foodsList.GetSheetColsGroupCount()
 
 	var currentCellLetter rune = 'A'
-	var currentGroupIndex int = 1
-	groupsHeaderValue := map[int]string{
-		1: "KG",
-		2: "UND",
-		3: "CX",
-		4: "PRODUTO",
-	}
-	for currentCellsGroup := 0.0; currentCellsGroup < foodsListGroupsCount*sheetColsPerFoodsGroupCount; currentCellsGroup++ {
+	for currentCellsGroup := 0.0; currentCellsGroup < foodsListGroupsCount; currentCellsGroup++ {
 		cell := fmt.Sprintf("%c1", currentCellLetter)
-		err = file.SetCellValue(customerName, cell, groupsHeaderValue[currentGroupIndex])
+		err = file.SetSheetRow(customerName, cell, &[]any{"KG", "UND", "CX", "PRODUTO"})
 		if err != nil {
 			return err
 		}
 
-		if currentGroupIndex == 4 {
-			currentGroupIndex = 1
-		} else {
-			currentGroupIndex++
-		}
-		currentCellLetter += 1
+		currentCellLetter += sheetColsPerFoodsGroupCount
 	}
 
 	err = file.SetColWidth(customerName, "A", fmt.Sprintf("%c", currentCellLetter), 18)

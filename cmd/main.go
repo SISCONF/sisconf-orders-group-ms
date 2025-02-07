@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/SISCONF/sisconf-orders-group-ms.git/internal/files"
@@ -26,5 +27,8 @@ func main() {
 		},
 	}
 
-	files.CreateOrdersGroupXlsxFile(ordersGroup)
+	err := files.CreateOrdersGroupXlsxFile(ordersGroup)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
 }
