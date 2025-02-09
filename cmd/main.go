@@ -18,9 +18,14 @@ func main() {
 				CustomerName: "Alyson",
 				Details: []sisconf.OrderFood{
 					{
-						FoodName:     "Teste",
+						FoodName:     "ABACATE",
 						Quantity:     12,
 						QuantityType: "KG",
+					},
+					{
+						FoodName:     "ABACAXI GRANDE",
+						Quantity:     10,
+						QuantityType: "CX",
 					},
 				},
 			},
