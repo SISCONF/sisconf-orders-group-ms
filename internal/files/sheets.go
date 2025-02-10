@@ -5,34 +5,15 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"math"
 	"os"
 
 	"github.com/SISCONF/sisconf-orders-group-ms.git/internal/sisconf"
 	"github.com/xuri/excelize/v2"
 )
 
-type FoodsList []sisconf.Food
-
 const sheetColsPerFoodsGroupCount rune = 4
 const sheetFoodRowsPerFoodGroupCount float64 = 56
 const headerFillAndRowsColor string = "00B050"
-
-func (foodsList FoodsList) GetSheetColsGroupCount() float64 {
-	return math.Ceil(
-		float64(len(foodsList)) /
-			float64(sheetFoodRowsPerFoodGroupCount))
-}
-
-func (foodsList FoodsList) GetFoodsNames() []string {
-	var names []string = make([]string, len(foodsList))
-
-	for index, food := range foodsList {
-		names[index] = food.Name
-	}
-
-	return names
-}
 
 func createHeaderRowStyle(file *excelize.File) (int, error) {
 	const headerRowFontColor string = "000000" // Black
@@ -143,7 +124,7 @@ func writeOrdersGroupXlsxHeader(file *excelize.File, customerName string, quanti
 		return nil, err
 	}
 
-	var foodsList FoodsList
+	var foodsList sisconf.FoodsList
 	err = json.Unmarshal(foodsByes, &foodsList)
 	if err != nil {
 		return nil, err
@@ -153,7 +134,7 @@ func writeOrdersGroupXlsxHeader(file *excelize.File, customerName string, quanti
 		return nil, errors.New("foods list is empty")
 	}
 
-	foodsListGroupsCount := foodsList.GetSheetColsGroupCount()
+	foodsListGroupsCount := foodsList.GetSheetColsGroupCount(sheetFoodRowsPerFoodGroupCount)
 
 	productsColReference := map[int]string{}
 	var currentCellLetter rune = 'A'
@@ -183,7 +164,7 @@ func writeFoodsListToGroupXlsx(file *excelize.File, customerName string, product
 		return err
 	}
 
-	var foodsList FoodsList
+	var foodsList sisconf.FoodsList
 	err = json.Unmarshal(foodsBytes, &foodsList)
 	if err != nil {
 		return err
@@ -193,7 +174,7 @@ func writeFoodsListToGroupXlsx(file *excelize.File, customerName string, product
 		return errors.New("foods list is empty")
 	}
 
-	foodsGroupQuantity := foodsList.GetSheetColsGroupCount()
+	foodsGroupQuantity := foodsList.GetSheetColsGroupCount(sheetFoodRowsPerFoodGroupCount)
 
 	var startSliceIndex int = 0
 	var endSliceIndex int
