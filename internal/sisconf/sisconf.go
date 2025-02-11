@@ -14,13 +14,6 @@ type SisconfAPIClient struct {
 	baseUrl string
 }
 
-type Food struct {
-	Id        int64   `json:"id"`
-	Category  string  `json:"category"`
-	Name      string  `json:"name"`
-	UnitPrice float64 `json:"unit_price"`
-}
-
 func NewSisconfAPIClient() SisconfAPIClient {
 	err := godotenv.Load()
 	if err != nil {

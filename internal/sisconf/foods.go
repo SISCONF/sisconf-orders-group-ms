@@ -2,6 +2,13 @@ package sisconf
 
 import "math"
 
+type Food struct {
+	Id        int64   `json:"id"`
+	Category  string  `json:"category"`
+	Name      string  `json:"name"`
+	UnitPrice float64 `json:"unit_price"`
+}
+
 type FoodsList []Food
 
 func (foodsList FoodsList) GetSheetColsGroupCount(sheetFoodRowsPerFoodGroupCount float64) float64 {

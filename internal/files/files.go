@@ -25,3 +25,18 @@ func WriteApiResponseToJSON(responseBody any, filePath string) error {
 
 	return err
 }
+
+func ReadStructJSON[T any](fileName string) (*T, error) {
+	dataBytes, err := os.ReadFile(fileName)
+	if err != nil {
+		return nil, err
+	}
+
+	var data T
+	err = json.Unmarshal(dataBytes, &data)
+	if err != nil {
+		return nil, err
+	}
+
+	return &data, err
+}

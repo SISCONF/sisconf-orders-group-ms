@@ -1,194 +1,167 @@
 package files
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
-	"os"
 
 	"github.com/SISCONF/sisconf-orders-group-ms.git/internal/sisconf"
+	"github.com/google/uuid"
 	"github.com/xuri/excelize/v2"
 )
 
-const sheetColsPerFoodsGroupCount rune = 4
-const sheetFoodRowsPerFoodGroupCount float64 = 56
-const headerFillAndRowsColor string = "00B050"
+const colsPerFoodsGroupCount rune = 4
+const foodRowsPerFoodGroupCount float64 = 56
+
+var colors = map[string]string{
+	"black": "#000000",
+	"green": "#00B050",
+}
+
+var border = []excelize.Border{
+	{
+		Style: 1,
+		Type:  "left",
+		Color: colors["black"],
+	},
+	{
+		Style: 1,
+		Type:  "right",
+		Color: colors["black"],
+	},
+	{
+		Style: 1,
+		Type:  "top",
+		Color: colors["black"],
+	},
+	{
+		Style: 1,
+		Type:  "bottom",
+		Color: colors["black"],
+	},
+}
 
 func createHeaderRowStyle(file *excelize.File) (int, error) {
-	const headerRowFontColor string = "000000" // Black
-
 	return file.NewStyle(&excelize.Style{
-		Fill: excelize.Fill{Color: []string{headerFillAndRowsColor}, Type: "pattern", Pattern: 1},
+		Fill: excelize.Fill{Color: []string{colors["green"]}, Type: "pattern", Pattern: 1},
 		Font: &excelize.Font{
-			Bold:   true,
-			Family: "Calibri",
-			Color:  headerRowFontColor,
-			Size:   10,
+			Bold:  true,
+			Color: colors["black"],
+			Size:  10,
 		},
 		Alignment: &excelize.Alignment{
 			Horizontal: "center",
 		},
-		Border: []excelize.Border{
-			{
-				Style: 1,
-				Type:  "left",
-				Color: "#000000",
-			},
-			{
-				Style: 1,
-				Type:  "right",
-				Color: "#000000",
-			},
-			{
-				Style: 1,
-				Type:  "top",
-				Color: "#000000",
-			},
-			{
-				Style: 1,
-				Type:  "bottom",
-				Color: "#000000",
-			},
-		},
+		Border: border,
 	})
 }
 
-func createProductColsStyle(file *excelize.File) (int, error) {
+func createCommonColStyle(file *excelize.File) (int, error) {
 	return file.NewStyle(&excelize.Style{
 		Font: &excelize.Font{
-			Bold:   true,
-			Family: "Calibri",
-			Color:  headerFillAndRowsColor,
-			Size:   10,
+			Size: 10,
 		},
-		Border: []excelize.Border{
-			{
-				Style: 1,
-				Type:  "left",
-				Color: "#000000",
-			},
-			{
-				Style: 1,
-				Type:  "right",
-				Color: "#000000",
-			},
-			{
-				Style: 1,
-				Type:  "top",
-				Color: "#000000",
-			},
-			{
-				Style: 1,
-				Type:  "bottom",
-				Color: "#000000",
-			},
-		},
-	})
-}
-
-func createQuantityColsStyle(file *excelize.File) (int, error) {
-	return file.NewStyle(&excelize.Style{
 		Alignment: &excelize.Alignment{
 			Horizontal: "center",
 		},
-		Border: []excelize.Border{
-			{
-				Style: 1,
-				Type:  "left",
-				Color: "#000000",
-			},
-			{
-				Style: 1,
-				Type:  "right",
-				Color: "#000000",
-			},
-			{
-				Style: 1,
-				Type:  "top",
-				Color: "#000000",
-			},
-			{
-				Style: 1,
-				Type:  "bottom",
-				Color: "#000000",
-			},
-		},
+		Border: border,
 	})
 }
 
-func writeOrdersGroupXlsxHeader(file *excelize.File, customerName string, quantityColsStyleIndex int) (map[int]string, error) {
+func createProductsColStyle(file *excelize.File) (int, error) {
+	return file.NewStyle(&excelize.Style{
+		Font: &excelize.Font{
+			Bold:  true,
+			Size:  10,
+			Color: colors["green"],
+		},
+		Border: border,
+	})
+}
+
+func writeOrdersGroupXlsxHeader(file *excelize.File, customerName string, commonColsStyleIndex, productColStyleIndex, headerRowStyleIndex int) error {
 	var err error
-	foodsByes, err := os.ReadFile("foods.json")
+	foodsList, err := ReadStructJSON[sisconf.FoodsList]("foods.json")
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	var foodsList sisconf.FoodsList
-	err = json.Unmarshal(foodsByes, &foodsList)
-	if err != nil {
-		return nil, err
+	if len(*foodsList) == 0 {
+		return errors.New("foods list is empty")
 	}
 
-	if len(foodsList) == 0 {
-		return nil, errors.New("foods list is empty")
-	}
-
-	foodsListGroupsCount := foodsList.GetSheetColsGroupCount(sheetFoodRowsPerFoodGroupCount)
-
-	productsColReference := map[int]string{}
+	foodsListGroupsCount := foodsList.GetSheetColsGroupCount(foodRowsPerFoodGroupCount)
 	var currentCellLetter rune = 'A'
+
 	for currentCellsGroup := 0.0; currentCellsGroup < foodsListGroupsCount; currentCellsGroup++ {
 		cell := fmt.Sprintf("%c1", currentCellLetter)
 		err = file.SetSheetRow(customerName, cell, &[]any{"KG", "UND", "CX", "PRODUTO"})
 		if err != nil {
-			return nil, err
+			return err
 		}
-		file.SetColStyle(customerName, fmt.Sprintf("%c:%c", currentCellLetter, currentCellLetter+sheetColsPerFoodsGroupCount-1), quantityColsStyleIndex)
 
-		currentCellLetter += sheetColsPerFoodsGroupCount
-		cellToStore := fmt.Sprintf("%c2", currentCellLetter-1)
-		productsColReference[int(currentCellsGroup)] = cellToStore
-		err = file.SetColWidth(customerName, fmt.Sprintf("%c", cellToStore[0]), fmt.Sprintf("%c", cellToStore[0]), 20)
+		productsCellLetter := currentCellLetter + colsPerFoodsGroupCount - 1
+		foodsGroupColRange := fmt.Sprintf(
+			"%c:%c",
+			currentCellLetter,
+			productsCellLetter,
+		)
+		err = file.SetColStyle(customerName, foodsGroupColRange, commonColsStyleIndex)
 		if err != nil {
-			return nil, err
+			return err
+		}
+
+		err = file.SetColStyle(customerName, string(productsCellLetter), productColStyleIndex)
+		if err != nil {
+			return err
+		}
+
+		currentCellLetter += colsPerFoodsGroupCount
+		err = file.SetColWidth(
+			customerName,
+			string(productsCellLetter),
+			string(productsCellLetter),
+			20,
+		)
+		if err != nil {
+			return err
 		}
 	}
-	return productsColReference, err
+
+	err = file.SetRowStyle(customerName, 1, 1, headerRowStyleIndex)
+	return err
 }
 
-func writeFoodsListToGroupXlsx(file *excelize.File, customerName string, productsColReference map[int]string) error {
+func writeFoodsListToGroupXlsx(file *excelize.File, customerName string) error {
 	var err error
-	foodsBytes, err := os.ReadFile("foods.json")
+	foodsList, err := ReadStructJSON[sisconf.FoodsList]("foods.json")
 	if err != nil {
 		return err
 	}
 
-	var foodsList sisconf.FoodsList
-	err = json.Unmarshal(foodsBytes, &foodsList)
-	if err != nil {
-		return err
-	}
-
-	if len(foodsList) == 0 {
+	if len(*foodsList) == 0 {
 		return errors.New("foods list is empty")
 	}
-
-	foodsGroupQuantity := foodsList.GetSheetColsGroupCount(sheetFoodRowsPerFoodGroupCount)
 
 	var startSliceIndex int = 0
 	var endSliceIndex int
 	var foodsNames []string = foodsList.GetFoodsNames()
+	productsCells, err := file.SearchSheet(customerName, "PRODUTO")
 
-	for currentFoodGroup := 0.0; currentFoodGroup < foodsGroupQuantity; currentFoodGroup++ {
-		endSliceIndex = (int(currentFoodGroup) + 1) * int(sheetFoodRowsPerFoodGroupCount)
-		if endSliceIndex > len(foodsList) {
-			endSliceIndex = len(foodsList)
+	for productCellIndex, productCell := range productsCells {
+		endSliceIndex = (int(productCellIndex) + 1) * int(foodRowsPerFoodGroupCount)
+		if endSliceIndex > len(*foodsList) {
+			endSliceIndex = len(*foodsList)
 		}
-		currentCell := productsColReference[int(currentFoodGroup)]
+
+		productCellStartingDataRow := fmt.Sprintf("%c2", rune(productCell[0]))
 		foodsNamesSlice := foodsNames[startSliceIndex:endSliceIndex]
-		err = file.SetSheetCol(customerName, currentCell, &foodsNamesSlice)
-		startSliceIndex += int(sheetFoodRowsPerFoodGroupCount)
+		err = file.SetSheetCol(customerName, productCellStartingDataRow, &foodsNamesSlice)
+		if err != nil {
+			return err
+		}
+
+		startSliceIndex += int(foodRowsPerFoodGroupCount)
 	}
 
 	return err
@@ -207,9 +180,9 @@ func writeFoodsQuantityToXlsx(file *excelize.File, order *sisconf.Order) error {
 			log.Printf("couldn't find food %s\n", orderDetail.FoodName)
 		} else {
 			productCell := cells[0]
-			quantityCellLetter := rune(productCell[0])
+			quantityCellLetter := rune(productCell[0]) - quantityTypeSheetMap[orderDetail.QuantityType]
 			quantityCellNumber := rune(productCell[1])
-			quantityCell := fmt.Sprintf("%c%c", quantityCellLetter-quantityTypeSheetMap[orderDetail.QuantityType], quantityCellNumber)
+			quantityCell := fmt.Sprintf("%c%c", quantityCellLetter, quantityCellNumber)
 			file.SetCellValue(order.CustomerName, quantityCell, orderDetail.Quantity)
 		}
 	}
@@ -223,48 +196,45 @@ func CreateOrdersGroupXlsxFile(ordersGroup sisconf.OrdersGroup) error {
 		return file.Close()
 	}()
 
+	err = file.SetDefaultFont("Calibri")
+	if err != nil {
+		return err
+	}
+
+	headerRowStyleIndex, err := createHeaderRowStyle(file)
+	if err != nil {
+		return err
+	}
+
+	productsColsStyleIndex, err := createProductsColStyle(file)
+	if err != nil {
+		return err
+	}
+
+	commonColsStyleIndex, err := createCommonColStyle(file)
+	if err != nil {
+		return err
+	}
+
 	for _, order := range ordersGroup.Orders {
-		_, err := file.NewSheet(order.CustomerName)
+		sheetIndex, err := file.NewSheet(order.CustomerName)
+		if err != nil {
+			return err
+		}
+		file.SetActiveSheet(sheetIndex)
+
+		err = writeOrdersGroupXlsxHeader(
+			file,
+			order.CustomerName,
+			commonColsStyleIndex,
+			productsColsStyleIndex,
+			headerRowStyleIndex,
+		)
 		if err != nil {
 			return err
 		}
 
-		quantityColsStyleIndex, err := createQuantityColsStyle(file)
-		if err != nil {
-			return err
-		}
-
-		productsColReference, err := writeOrdersGroupXlsxHeader(file, order.CustomerName, quantityColsStyleIndex)
-		if err != nil {
-			return err
-		}
-
-		headerStyleIndex, err := createHeaderRowStyle(file)
-		if err != nil {
-			return err
-		}
-
-		colsStyleIndex, err := createProductColsStyle(file)
-		if err != nil {
-			return err
-		}
-
-		err = file.SetColStyle(order.CustomerName, "D", colsStyleIndex)
-		if err != nil {
-			return err
-		}
-
-		err = file.SetColStyle(order.CustomerName, "H", colsStyleIndex)
-		if err != nil {
-			return err
-		}
-
-		err = file.SetRowStyle(order.CustomerName, 1, 1, headerStyleIndex)
-		if err != nil {
-			return err
-		}
-
-		err = writeFoodsListToGroupXlsx(file, order.CustomerName, productsColReference)
+		err = writeFoodsListToGroupXlsx(file, order.CustomerName)
 		if err != nil {
 			return err
 		}
@@ -275,7 +245,8 @@ func CreateOrdersGroupXlsxFile(ordersGroup sisconf.OrdersGroup) error {
 		}
 	}
 
-	err = file.SaveAs("Teste.xlsx")
+	filename := fmt.Sprintf("pedido_geral_%s.xlsx", uuid.NewString())
+	err = file.SaveAs(filename)
 
 	return err
 }
