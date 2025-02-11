@@ -79,17 +79,8 @@ func createProductsColStyle(file *excelize.File) (int, error) {
 	})
 }
 
-func writeOrdersGroupXlsxHeader(file *excelize.File, customerName string, commonColsStyleIndex, productColStyleIndex, headerRowStyleIndex int) error {
+func writeOrdersGroupXlsxHeader(file *excelize.File, customerName string, foodsList *sisconf.FoodsList, commonColsStyleIndex, productColStyleIndex, headerRowStyleIndex int) error {
 	var err error
-	foodsList, err := ReadStructJSON[sisconf.FoodsList]("foods.json")
-	if err != nil {
-		return err
-	}
-
-	if len(*foodsList) == 0 {
-		return errors.New("foods list is empty")
-	}
-
 	foodsListGroupsCount := foodsList.GetSheetColsGroupCount(foodRowsPerFoodGroupCount)
 	var currentCellLetter rune = 'A'
 
@@ -132,17 +123,8 @@ func writeOrdersGroupXlsxHeader(file *excelize.File, customerName string, common
 	return err
 }
 
-func writeFoodsListToGroupXlsx(file *excelize.File, customerName string) error {
+func writeFoodsListToGroupXlsx(file *excelize.File, customerName string, foodsList *sisconf.FoodsList) error {
 	var err error
-	foodsList, err := ReadStructJSON[sisconf.FoodsList]("foods.json")
-	if err != nil {
-		return err
-	}
-
-	if len(*foodsList) == 0 {
-		return errors.New("foods list is empty")
-	}
-
 	var startSliceIndex int = 0
 	var endSliceIndex int
 	var foodsNames []string = foodsList.GetFoodsNames()
@@ -216,6 +198,15 @@ func CreateOrdersGroupXlsxFile(ordersGroup sisconf.OrdersGroup) error {
 		return err
 	}
 
+	foodsList, err := ReadStructJSON[sisconf.FoodsList]("./internal/data/foods.json")
+	if err != nil {
+		return err
+	}
+
+	if len(*foodsList) == 0 {
+		return errors.New("foods list is empty")
+	}
+
 	for _, order := range ordersGroup.Orders {
 		sheetIndex, err := file.NewSheet(order.CustomerName)
 		if err != nil {
@@ -226,6 +217,7 @@ func CreateOrdersGroupXlsxFile(ordersGroup sisconf.OrdersGroup) error {
 		err = writeOrdersGroupXlsxHeader(
 			file,
 			order.CustomerName,
+			foodsList,
 			commonColsStyleIndex,
 			productsColsStyleIndex,
 			headerRowStyleIndex,
@@ -234,7 +226,7 @@ func CreateOrdersGroupXlsxFile(ordersGroup sisconf.OrdersGroup) error {
 			return err
 		}
 
-		err = writeFoodsListToGroupXlsx(file, order.CustomerName)
+		err = writeFoodsListToGroupXlsx(file, order.CustomerName, foodsList)
 		if err != nil {
 			return err
 		}
@@ -243,6 +235,12 @@ func CreateOrdersGroupXlsxFile(ordersGroup sisconf.OrdersGroup) error {
 		if err != nil {
 			return err
 		}
+	}
+
+	// Default sheet created, not useful
+	err = file.DeleteSheet("Sheet1")
+	if err != nil {
+		return err
 	}
 
 	filename := fmt.Sprintf("pedido_geral_%s.xlsx", uuid.NewString())
