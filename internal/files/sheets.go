@@ -243,7 +243,7 @@ func CreateOrdersGroupXlsxFile(ordersGroup sisconf.OrdersGroup) error {
 		return err
 	}
 
-	filename := fmt.Sprintf("pedido_geral_%s.xlsx", uuid.NewString())
+	filename := fmt.Sprintf("./internal/data/pedido_geral_%s.xlsx", uuid.NewString())
 	err = file.SaveAs(filename)
 
 	return err

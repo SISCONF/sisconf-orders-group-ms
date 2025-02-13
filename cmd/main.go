@@ -22,20 +22,35 @@ func main() {
 	log.Println("Successfully started cron scheduler")
 
 	workerQueueName := os.Getenv("RABBIT_MQ_ORDERS_GROUP_SHEET_QUEUE_NAME")
-	msgs := jobs.NewSisconfAmqpBrokerChannel()
+	connection, channel, msgs := jobs.NewSisconfAmqpBrokerChannel()
+	defer connection.Close()
+	defer channel.Close()
 	logMsg := fmt.Sprintf("Waiting for tasks in %s", workerQueueName)
 	log.Println(logMsg)
 
 	go func() {
 		for delivery := range msgs {
+			log.Println("Received a task")
+
 			var ordersGroup sisconf.OrdersGroup
 			err = json.Unmarshal(delivery.Body, &ordersGroup)
 			if err != nil {
 				logMsg = fmt.Sprintf("Couldn't read message body: %s", err.Error())
-				log.Fatalln(logMsg)
-			} else {
-				files.CreateOrdersGroupXlsxFile(ordersGroup)
+				log.Println(logMsg)
+				delivery.Nack(false, true)
+				continue
 			}
+
+			err = files.CreateOrdersGroupXlsxFile(ordersGroup)
+			if err != nil {
+				logMsg = fmt.Sprintf("Couldn't create spreadsheet: %s", err.Error())
+				log.Println(logMsg)
+				delivery.Nack(false, true)
+				continue
+			}
+
+			delivery.Ack(false)
+			log.Println("Task acknowledged")
 		}
 	}()
 

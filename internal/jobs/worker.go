@@ -8,18 +8,16 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-func NewSisconfAmqpBrokerChannel() <-chan amqp.Delivery {
+func NewSisconfAmqpBrokerChannel() (*amqp.Connection, *amqp.Channel, <-chan amqp.Delivery) {
 	err := godotenv.Load()
 	utils.PanicOnError("Couldn't load .env", err)
 
 	rabbitMqHost := os.Getenv("RABBIT_MQ_HOSTNAME")
 	connection, err := amqp.Dial(rabbitMqHost)
 	utils.PanicOnError("Couldn't dial RabbitMQ", err)
-	defer connection.Close()
 
 	channel, err := connection.Channel()
 	utils.PanicOnError("Failed to open RabbitMQ channel", err)
-	defer channel.Close()
 
 	queueName := os.Getenv("RABBIT_MQ_ORDERS_GROUP_SHEET_QUEUE_NAME")
 	queue, err := channel.QueueDeclare(
@@ -50,5 +48,5 @@ func NewSisconfAmqpBrokerChannel() <-chan amqp.Delivery {
 	)
 	utils.PanicOnError("Couldn't consume queue", err)
 
-	return msgs
+	return connection, channel, msgs
 }
