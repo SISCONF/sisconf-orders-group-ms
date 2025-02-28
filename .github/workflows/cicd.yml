@@ -6,7 +6,7 @@ jobs:
   continous-integration:
     runs_on: ubuntu_latest
 
-    - steps:
+    steps:
       - uses: actions/checkout@v4
 
       - name: Set up Docker
