@@ -40,6 +40,7 @@ jobs:
           sudo rm -rf sisconf-orders-group-ms
 
           git clone --branch ${BRANCH} --single-branch https://github.com/SISCONF/sisconf-orders-group-ms.git
+          cd sisconf-orders-group-ms
           touch .env
           cat ~/.env > .env
           cd ~/sisconf-orders-group-ms
