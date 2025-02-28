@@ -27,10 +27,10 @@ jobs:
           PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }}
           HOST: ${{ secrets.EC2_HOST }}
           USER: ${{ secrets.EC2_USER }}
-          BRANCH: ${{ github.ref_name }}
         run: |
           echo "$PRIVATE_KEY" > sisconf-go-microservice.pem && chmod 600 sisconf-go-microservice.pem
           ssh -o StrictHostKeyChecking=no -i sisconf-go-microservice.pem ${USER}@${HOST} << 'EOF'
+          BRANCH=${{ github.ref_name }}
 
           if [ -d "sisconf-orders-group-ms" ]; then
             cd sisconf-orders-group-ms
