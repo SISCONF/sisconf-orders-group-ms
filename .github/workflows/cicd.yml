@@ -4,7 +4,7 @@ on: [pull_request, push]
 
 jobs:
   continous-integration:
-    runs-on: ubuntu_latest
+    runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
@@ -16,7 +16,7 @@ jobs:
         run: docker build -f ./build/package/Dockerfile .
   
   deploy:
-    runs-on: ubuntu_latest
+    runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main'
     needs: [continous-integration]
     steps:
