@@ -65,6 +65,10 @@ func (sisconfApiClient SisconfAPIClient) Login(loginData LoginData) (string, err
 	if err != nil {
 		return "", err
 	}
+
+	if resp.StatusCode != 200 {
+		return "", errors.New("couldn't log user in")
+	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
@@ -85,7 +89,7 @@ func (sisconfApiClient SisconfAPIClient) UpdateOrdersGroupSheetFileURL(ordersGro
 	godotenv.Load()
 
 	ordersGroupPartialUpdateUrl := fmt.Sprintf(
-		"%s/orders-group/%d",
+		"%s/orders-group/%d/doc-url",
 		sisconfApiClient.baseUrl,
 		ordersGroupId,
 	)
@@ -115,6 +119,7 @@ func (sisconfApiClient SisconfAPIClient) UpdateOrdersGroupSheetFileURL(ordersGro
 	}
 
 	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", authenticationToken))
+	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := client.Do(req)
 	if err != nil {

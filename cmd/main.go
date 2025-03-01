@@ -36,14 +36,15 @@ func main() {
 
 	for i := range workerCount {
 		wg.Add(1)
-		go worker(i, msgs, &wg)
+		go worker(i, msgs, &wg, channel)
 	}
 
 	wg.Wait()
 }
 
-func worker(id int, msgs <-chan amqp.Delivery, wg *sync.WaitGroup) {
+func worker(id int, msgs <-chan amqp.Delivery, wg *sync.WaitGroup, channel *amqp.Channel) {
 	defer wg.Done()
+	const maxRetries = 3
 	var logMsg string
 
 	for delivery := range msgs {
@@ -54,7 +55,7 @@ func worker(id int, msgs <-chan amqp.Delivery, wg *sync.WaitGroup) {
 		if err != nil {
 			logMsg = fmt.Sprintf("Worker %d: Couldn't read message body: %s", id, err.Error())
 			log.Println(logMsg)
-			delivery.Nack(false, true)
+			handleRetry(&delivery, maxRetries, channel)
 			continue
 		}
 
@@ -62,11 +63,45 @@ func worker(id int, msgs <-chan amqp.Delivery, wg *sync.WaitGroup) {
 		if err != nil {
 			logMsg = fmt.Sprintf("Worker %d: Couldn't create spreadsheet: %s", id, err.Error())
 			log.Println(logMsg)
-			delivery.Nack(false, true)
+			handleRetry(&delivery, maxRetries, channel)
 			continue
 		}
 
 		delivery.Ack(false)
 		log.Printf("Worker %d: Task acknowledged\n", id)
+	}
+}
+
+func handleRetry(delivery *amqp.Delivery, maxRetries int, channel *amqp.Channel) {
+	retries, ok := delivery.Headers["x-retries"].(int32)
+	if !ok {
+		retries = 0
+	}
+
+	if retries < int32(maxRetries) {
+		delivery.Headers["x-retries"] = retries + 1
+
+		err := channel.Publish(
+			"",
+			delivery.RoutingKey,
+			false,
+			false,
+			amqp.Publishing{
+				Headers:     delivery.Headers,
+				ContentType: "application/json",
+				Body:        delivery.Body,
+			},
+		)
+
+		if err != nil {
+			log.Printf("Failed to republish message %s\n", err.Error())
+			return
+		}
+
+		delivery.Ack(false)
+		log.Printf("Message requeued (retry %d of %d)\n", retries+1, maxRetries)
+	} else {
+		delivery.Nack(false, false)
+		log.Printf("Message discarded after %d retries\n", maxRetries)
 	}
 }
