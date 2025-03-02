@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/SISCONF/sisconf-orders-group-ms.git/internal/sisconf"
 	"github.com/google/uuid"
@@ -245,6 +246,24 @@ func CreateOrdersGroupXlsxFile(ordersGroup sisconf.OrdersGroup) error {
 
 	filename := fmt.Sprintf("./internal/data/pedido_geral_%s.xlsx", uuid.NewString())
 	err = file.SaveAs(filename)
+	if err != nil {
+		return err
+	}
+	defer os.Remove(filename)
 
-	return err
+	fileUrl, err := UploadToS3Bucket(filename)
+	if err != nil {
+		return err
+	}
+
+	sisconfApiClient := sisconf.NewSisconfAPIClient()
+	err = sisconfApiClient.UpdateOrdersGroupSheetFileURL(
+		ordersGroup.Id,
+		fileUrl,
+	)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

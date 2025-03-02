@@ -14,6 +14,7 @@ type Order struct {
 }
 
 type OrdersGroup struct {
+	Id           int
 	TotalPrice   float64
 	OrderDate    time.Time
 	ItemQuantity int
