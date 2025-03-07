@@ -13,7 +13,7 @@ func NewSisConfCronScheduler() gocron.Scheduler {
 
 	job, err := scheduler.NewJob(
 		gocron.CronJob(
-			"*/5 * * * *",
+			"* * * * *",
 			false,
 		),
 		gocron.NewTask(func() {
