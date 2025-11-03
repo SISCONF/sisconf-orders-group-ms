@@ -1,0 +1,7 @@
+services:
+  orders-group-sheet:
+    build:
+      context: ./
+      dockerfile: ./build/package/Dockerfile
+    env_file:
+      - ./.env
