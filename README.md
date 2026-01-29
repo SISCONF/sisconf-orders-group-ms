@@ -6,7 +6,9 @@ a very time-consuming task of manually checking and sending the orders to each p
 the order was already placed, on their way or received by the entrepreneur, who acted as middleman throughout the process.
 
 The solution presented by this system is to create a centralized hub for the entrepreneur and the customers, where they can create their orders and track them; and where the entrepreneur can group the orders and automatically create
-spreadsheets.
+spreadsheets. The use-case diagram displays all system features
+
+![Casos de Uso](https://github.com/user-attachments/assets/b7e86051-9e1a-40df-a514-dee68dee13e8)
 
 # The Architecture 🏗️
 
