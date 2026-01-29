@@ -12,11 +12,13 @@ spreadsheets. The use-case diagram displays all system features
 
 # The Architecture 🏗️
 
-We opted to follow a microservice architecture for a couple of reasons:
+A couple of reasons why we choose to go with microservices architecture, along with other architectural decisions, can be seen down below:
 
 1. It would allow us the scale only the service of creating spreadsheets. Since it would do a lot of I/O operations with multiple rows of a spreadsheet, this is very important. Golang was picked for the language of this microservice because of its performance
 2. Our teams were working from different places. This also would allow us to have our own release cycle for each part of the system
 3. The decoupled user service (Keycloak) could be used in many different applications if we were the expand the business
+4. Choosing a message queue instead of gRPC or REST commmunication is the ideal option here, since the thread could not be block after sending the request to generate a spreadsheet, which could take some time
+5. Grafana and Prometheus were utilized for us to monitor our server capacity usage and database metrics, allowing us to make intelligent decisions regarding infrastructure and security in the future
 
 Below, you can find the architectural diagram
 
